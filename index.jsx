@@ -15,7 +15,6 @@ const PHRASES = [
   "Man besī manuāla datu ievade"
 ];
 
-// Generates a fully organic, scattered array of text that mathematically guarantees no overlapping
 const ScatterLayer = ({ speed }) => {
   const bgItems = useMemo(() => {
     const phrases = [];
@@ -23,79 +22,64 @@ const ScatterLayer = ({ speed }) => {
     let placed = 0;
     const targetCount = 35;
 
-    // Checks if two bounding boxes overlap
     const checkOverlap = (r1, r2) => {
-       const padY = 3; // Vertical padding margin (vh)
-       const padX = 2; // Horizontal padding margin (vw)
-       return (
-         r1.left < r2.right + padX &&
-         r1.right > r2.left - padX &&
-         r1.top < r2.bottom + padY &&
-         r1.bottom > r2.top - padY
-       );
+      const padY = 3;
+      const padX = 2;
+      return (
+        r1.left < r2.right + padX &&
+        r1.right > r2.left - padX &&
+        r1.top < r2.bottom + padY &&
+        r1.bottom > r2.top - padY
+      );
     };
 
-    for(let i=0; i < maxAttempts && placed < targetCount; i++) {
-       const text = PHRASES[Math.floor(Math.random() * PHRASES.length)];
-       
-       // 3 Tiers of depth. Reduced blur drastically based on feedback.
-       const tier = Math.floor(Math.random() * 3);
-       const scale = tier === 0 ? 0.8 : tier === 1 ? 1 : 1.2;
-       const opacity = tier === 0 ? 0.06 : tier === 1 ? 0.12 : 0.20;
-       const blur = tier === 0 ? '0.5px' : '0px'; 
-       
-       // Random positioning
-       const top = Math.random() * 200; // 0 to 200vh for a tall looping canvas
-       const left = Math.random() * 70; // 0 to 70vw to avoid clipping on the right edge
-       
-       // Approximate bounding box calculations
-       const width = text.length * 1.1 * scale; // Approx char width to vw
-       const height = 5 * scale; // Approx line height to vh
-       
-       const rect1 = { top, bottom: top + height, left, right: left + width };
-       
-       let overlaps = false;
-       for(const p of phrases) {
-          const r2 = p.rect;
-          // Check standard overlap, plus loop wrap-around overlaps
-          const r2_up = { ...r2, top: r2.top - 200, bottom: r2.bottom - 200 };
-          const r2_down = { ...r2, top: r2.top + 200, bottom: r2.bottom + 200 };
-          
-          if (checkOverlap(rect1, r2) || checkOverlap(rect1, r2_up) || checkOverlap(rect1, r2_down)) {
-             overlaps = true;
-             break;
-          }
-       }
-       
-       if (!overlaps) {
-          phrases.push({
-             id: placed, text, top: `${top}vh`, left: `${left}vw`,
-             scale, opacity, blur, rect: rect1
-          });
-          placed++;
-       }
+    for (let i = 0; i < maxAttempts && placed < targetCount; i++) {
+      const text = PHRASES[Math.floor(Math.random() * PHRASES.length)];
+      const tier = Math.floor(Math.random() * 3);
+      const scale = tier === 0 ? 0.8 : tier === 1 ? 1 : 1.2;
+      const opacity = tier === 0 ? 0.03 : tier === 1 ? 0.07 : 0.12;
+      const blur = tier === 0 ? '0.5px' : '0px';
+      const top = Math.random() * 200;
+      const left = Math.random() * 70;
+      const width = text.length * 1.1 * scale;
+      const height = 5 * scale;
+      const rect1 = { top, bottom: top + height, left, right: left + width };
+
+      let overlaps = false;
+      for (const p of phrases) {
+        const r2 = p.rect;
+        const r2_up = { ...r2, top: r2.top - 200, bottom: r2.bottom - 200 };
+        const r2_down = { ...r2, top: r2.top + 200, bottom: r2.bottom + 200 };
+        if (checkOverlap(rect1, r2) || checkOverlap(rect1, r2_up) || checkOverlap(rect1, r2_down)) {
+          overlaps = true;
+          break;
+        }
+      }
+
+      if (!overlaps) {
+        phrases.push({ id: placed, text, top: `${top}vh`, left: `${left}vw`, scale, opacity, blur, rect: rect1 });
+        placed++;
+      }
     }
     return phrases;
   }, []);
 
   return (
     <div className="absolute inset-0 w-full h-[200vh] falling-scatter pointer-events-none" style={{ animationDuration: speed }}>
-       {/* Original Block */}
-       <div className="absolute top-0 left-0 w-full h-full">
-          {bgItems.map(item => (
-             <div key={`orig-${item.id}`} className="absolute whitespace-nowrap font-black uppercase tracking-tighter" style={{ top: item.top, left: item.left, opacity: item.opacity, filter: `blur(${item.blur})`, transform: `scale(${item.scale})`, transformOrigin: 'left top' }}>
-                {item.text}
-             </div>
-          ))}
-       </div>
-       {/* Seamless Loop Duplicate Block */}
-       <div className="absolute left-0 w-full h-full" style={{ top: '-200vh' }}>
-          {bgItems.map(item => (
-             <div key={`dup-${item.id}`} className="absolute whitespace-nowrap font-black uppercase tracking-tighter" style={{ top: item.top, left: item.left, opacity: item.opacity, filter: `blur(${item.blur})`, transform: `scale(${item.scale})`, transformOrigin: 'left top' }}>
-                {item.text}
-             </div>
-          ))}
-       </div>
+      <div className="absolute top-0 left-0 w-full h-full">
+        {bgItems.map(item => (
+          <div key={`orig-${item.id}`} className="absolute whitespace-nowrap font-black uppercase tracking-tighter scatter-text" style={{ top: item.top, left: item.left, opacity: item.opacity, filter: `blur(${item.blur})`, transform: `scale(${item.scale})`, transformOrigin: 'left top' }}>
+            {item.text}
+          </div>
+        ))}
+      </div>
+      <div className="absolute left-0 w-full h-full" style={{ top: '-200vh' }}>
+        {bgItems.map(item => (
+          <div key={`dup-${item.id}`} className="absolute whitespace-nowrap font-black uppercase tracking-tighter scatter-text" style={{ top: item.top, left: item.left, opacity: item.opacity, filter: `blur(${item.blur})`, transform: `scale(${item.scale})`, transformOrigin: 'left top' }}>
+            {item.text}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -105,12 +89,13 @@ export default function App() {
   const [problem, setProblem] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!email || !problem) return;
-    
     setIsSubmitting(true);
+    setSubmittedEmail(email);
     setTimeout(() => {
       setIsSubmitting(false);
       setIsSubmitted(true);
@@ -121,166 +106,265 @@ export default function App() {
 
   return (
     <>
-      <style>
-        {`
-          @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap');
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Manrope:wght@200;300;400;500;600;700;800&display=swap');
 
-          @keyframes scatterFall {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(200vh); }
-          }
-          .falling-scatter {
-            animation: scatterFall linear infinite;
-            will-change: transform;
-          }
-          textarea::-webkit-scrollbar { display: none; }
-          textarea { -ms-overflow-style: none; scrollbar-width: none; }
-          
-          input:-webkit-autofill,
-          input:-webkit-autofill:hover, 
-          input:-webkit-autofill:focus, 
-          textarea:-webkit-autofill,
-          textarea:-webkit-autofill:hover,
-          textarea:-webkit-autofill:focus {
-            -webkit-box-shadow: 0 0 0 30px #A31D36 inset !important;
-            -webkit-text-fill-color: #FFF5F5 !important;
-            transition: background-color 5000s ease-in-out 0s;
-          }
-        `}
-      </style>
+        *, *::before, *::after { box-sizing: border-box; }
 
-      {/* Main Container */}
-      <div 
-        className="min-h-screen bg-gradient-to-br from-[#A31D36] via-[#821327] to-[#4A0713] text-[#FFF5F5] selection:bg-[#FFF5F5] selection:text-[#821327] relative overflow-hidden flex items-center justify-center p-4"
-        style={{ fontFamily: "'Manrope', sans-serif" }}
+        @keyframes scatterFall {
+          0%   { transform: translateY(0); }
+          100% { transform: translateY(200vh); }
+        }
+        .falling-scatter {
+          animation: scatterFall linear infinite;
+          will-change: transform;
+        }
+
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .fu1 { animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
+        .fu2 { animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.20s both; }
+        .fu3 { animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.35s both; }
+        .fu4 { animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.50s both; }
+        .fu5 { animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.65s both; }
+
+        @keyframes pulseDot {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0.25; }
+        }
+        .pulse-dot { animation: pulseDot 2s ease-in-out infinite; }
+
+        @keyframes blinkCursor {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0; }
+        }
+        .blink { animation: blinkCursor 1s step-end infinite; }
+
+        .scatter-text { color: #c9f23e; }
+
+        textarea::-webkit-scrollbar { display: none; }
+        textarea { -ms-overflow-style: none; scrollbar-width: none; }
+
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        textarea:-webkit-autofill,
+        textarea:-webkit-autofill:hover,
+        textarea:-webkit-autofill:focus {
+          -webkit-box-shadow: 0 0 0 30px #07070a inset !important;
+          -webkit-text-fill-color: #e6e3dc !important;
+          transition: background-color 5000s ease-in-out 0s;
+        }
+
+        .input-field {
+          width: 100%;
+          background: transparent;
+          border: none;
+          border-bottom: 1px solid #1c1c22;
+          color: #e6e3dc;
+          font-family: 'Manrope', sans-serif;
+          font-size: 0.95rem;
+          font-weight: 300;
+          padding: 0 0 0.75rem;
+          outline: none;
+          transition: border-color 0.3s ease;
+          caret-color: #c9f23e;
+          resize: none;
+        }
+        .input-field::placeholder { color: #2c2c34; }
+        .input-field:focus { border-bottom-color: #c9f23e; }
+
+        .submit-btn {
+          width: 100%;
+          background: #c9f23e;
+          color: #07070a;
+          border: none;
+          font-family: 'Manrope', sans-serif;
+          font-size: 0.7rem;
+          font-weight: 800;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          padding: 1.1rem 2rem;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.6rem;
+          transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+        }
+        .submit-btn:hover:not(:disabled) {
+          background: #d4ff4a;
+          box-shadow: 0 0 48px rgba(201,242,62,0.22);
+          transform: translateY(-1px);
+        }
+        .submit-btn:disabled { opacity: 0.55; cursor: wait; }
+        .submit-btn .arrow { transition: transform 0.2s ease; }
+        .submit-btn:hover:not(:disabled) .arrow { transform: translateX(4px); }
+      `}</style>
+
+      <div
+        className="min-h-screen relative overflow-hidden flex items-center justify-center p-6 lg:p-10"
+        style={{
+          background: '#07070a',
+          color: '#e6e3dc',
+          fontFamily: "'Manrope', sans-serif",
+        }}
       >
-        
-        {/* Subtle Dot Pattern Overlay */}
-        <div 
-          className="absolute inset-0 z-0 pointer-events-none opacity-100" 
-          style={{ 
-            backgroundImage: 'radial-gradient(rgba(255, 245, 245, 0.15) 1.5px, transparent 1.5px)', 
-            backgroundSize: '32px 32px' 
-          }} 
+        {/* Dot grid */}
+        <div
+          className="absolute inset-0 pointer-events-none z-0"
+          style={{
+            backgroundImage: 'radial-gradient(rgba(201,242,62,0.065) 1px, transparent 1px)',
+            backgroundSize: '34px 34px',
+          }}
         />
 
-        {/* Grain Noise Overlay */}
-        <svg className="pointer-events-none fixed inset-0 z-50 w-full h-full opacity-[0.20] mix-blend-overlay" xmlns="http://www.w3.org/2000/svg">
+        {/* Grain noise */}
+        <svg className="pointer-events-none fixed inset-0 z-50 w-full h-full opacity-[0.13] mix-blend-overlay" xmlns="http://www.w3.org/2000/svg">
           <filter id="noise">
-            <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="3" stitchTiles="stitch" />
-            <feColorMatrix type="matrix" values="1 0 0 0 0, 0 1 0 0 0, 0 0 1 0 0, 0 0 0 0.3 0" />
+            <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch" />
+            <feColorMatrix type="matrix" values="1 0 0 0 0, 0 1 0 0 0, 0 0 1 0 0, 0 0 0 0.35 0" />
           </filter>
           <rect width="100%" height="100%" filter="url(#noise)" />
         </svg>
 
-        {/* ORGANIC SCATTERED BACKGROUND */}
-        <div className="absolute inset-0 z-0 pointer-events-none w-full h-full overflow-hidden">
-           <ScatterLayer speed="55s" />
+        {/* Top accent glow */}
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none z-0"
+          style={{
+            width: '70vw',
+            height: '35vh',
+            background: 'radial-gradient(ellipse at top, rgba(201,242,62,0.055) 0%, transparent 70%)',
+          }}
+        />
+
+        {/* Falling phrases */}
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <ScatterLayer speed="75s" />
         </div>
 
-        {/* Dark Vignette - Smoothed out to remove the light ring */}
-        <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,_rgba(0,0,0,0.4)_0%,_rgba(0,0,0,0.85)_100%)] pointer-events-none" />
+        {/* Vignette */}
+        <div
+          className="absolute inset-0 z-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse at center, transparent 25%, rgba(7,7,10,0.82) 100%)' }}
+        />
 
-        {/* CENTERED CONTENT */}
-        <div className="w-full max-w-xl relative z-10 flex flex-col items-center text-center">
-          
-          <div className="mb-10 lg:mb-14">
-            <h2 className="text-xs font-bold tracking-[0.3em] uppercase opacity-70 mb-5">
-              manbesi.lv
-            </h2>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tighter leading-[1.1] mb-5 drop-shadow-md">
-              JA TEV BESĪ KAUT KO DARĪT MANUĀLI, <br className="hidden sm:block"/>
-              <span className="opacity-60 text-transparent bg-clip-text bg-gradient-to-r from-[#FFF5F5] to-[#FFF5F5]/40">
-                VARAM PALĪDZĒT.
-              </span>
-            </h1>
-            <p className="text-sm lg:text-base font-light opacity-80 max-w-md mx-auto leading-relaxed">
-              Mēs pārvēršam stundām ilgu, garlaicīgu darbu sekundēs. 
-            </p>
+        {/* ─── CONTENT ─── */}
+        <div className="relative z-10 w-full max-w-[480px] flex flex-col items-center text-center">
+
+          {/* Status pill */}
+          <div className="fu1 flex items-center gap-2 mb-9 px-3.5 py-1.5 rounded-full" style={{ border: '1px solid #1c1c22' }}>
+            <div className="w-1.5 h-1.5 rounded-full bg-[#c9f23e] pulse-dot" />
+            <span style={{ fontSize: '0.6rem', letterSpacing: '0.22em', color: '#555550', textTransform: 'uppercase', fontWeight: 600 }}>
+              Pieņemam pieteikumus
+            </span>
           </div>
 
-          <div className="w-full">
-            {!isSubmitted ? (
-              <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full max-w-md mx-auto">
-                
-                <div className="group relative w-full text-left">
-                  <label htmlFor="email" className="block text-[10px] font-bold tracking-[0.15em] uppercase opacity-50 mb-2 pl-1">
-                    Tavs e-pasts
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-transparent border-b border-[#FFF5F5]/30 pb-2 text-base lg:text-lg font-light focus:outline-none focus:border-[#FFF5F5] transition-all duration-300 placeholder:text-[#FFF5F5]/20"
-                    placeholder="vards@uznemums.lv"
-                  />
-                </div>
+          {/* Title */}
+          <div className="fu2 mb-5 w-full">
+            <div style={{ fontSize: '0.6rem', letterSpacing: '0.28em', color: '#333330', textTransform: 'uppercase', fontWeight: 700, marginBottom: '1.1rem' }}>
+              manbesi.lv
+            </div>
+            <h1
+              style={{
+                fontFamily: "'Syne', sans-serif",
+                fontWeight: 800,
+                fontSize: 'clamp(3.4rem, 13vw, 6.2rem)',
+                lineHeight: 0.88,
+                letterSpacing: '-0.04em',
+                textTransform: 'uppercase',
+                color: '#e6e3dc',
+              }}
+            >
+              MAN
+              <br />
+              BES<span style={{ color: '#c9f23e' }}>Ī</span>
+              <span className="blink" style={{ color: '#c9f23e', fontSize: '0.75em' }}>_</span>
+            </h1>
+          </div>
 
-                <div className="group relative w-full text-left">
-                  <label htmlFor="problem" className="block text-[10px] font-bold tracking-[0.15em] uppercase opacity-50 mb-2 pl-1">
-                    Kas tieši tev besī?
-                  </label>
-                  <textarea
-                    id="problem"
-                    required
-                    rows={3}
-                    value={problem}
-                    onChange={(e) => setProblem(e.target.value)}
-                    className="w-full bg-transparent border-b border-[#FFF5F5]/30 pb-2 text-base lg:text-lg font-light focus:outline-none focus:border-[#FFF5F5] transition-all duration-300 resize-none placeholder:text-[#FFF5F5]/20 leading-relaxed"
-                    placeholder="Apraksti savu ikdienas manuālo procesu..."
-                  />
-                </div>
+          {/* Tagline */}
+          <p className="fu3 mb-9" style={{ fontSize: '0.82rem', fontWeight: 300, lineHeight: 1.75, color: '#5a5a55', maxWidth: '360px' }}>
+            Visu, ko atkārto katru dienu manuāli —<br />
+            mēs automatizēsim. Uzraksti mums.
+          </p>
 
-                <div className="pt-4 w-full flex flex-col sm:flex-row justify-center gap-4">
-                  <button
-                    type="button"
-                    className="group relative overflow-hidden bg-transparent border border-[#FFF5F5]/30 text-[#FFF5F5] py-4 px-8 rounded-full flex items-center justify-center gap-3 transition-all duration-300 hover:bg-[#FFF5F5]/10 hover:border-[#FFF5F5]/60 hover:scale-[1.03]"
-                  >
-                    <span className="text-xs lg:text-sm font-bold uppercase tracking-[0.15em]">
-                      Mūsu darbi
-                    </span>
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="group relative overflow-hidden bg-[#FFF5F5] text-[#821327] py-4 px-8 rounded-full flex items-center justify-center gap-3 transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_20px_rgba(255,245,245,0.2)] disabled:opacity-70 disabled:cursor-wait disabled:hover:scale-100"
-                  >
-                    <span className="text-xs lg:text-sm font-bold uppercase tracking-[0.15em]">
-                      {isSubmitting ? 'Tiek apstrādāts...' : 'Gribu automatizēt'}
-                    </span>
-                    {!isSubmitting && (
-                      <span className="text-lg transform transition-transform duration-300 group-hover:translate-x-1">
-                        →
-                      </span>
-                    )}
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <div className="animate-in fade-in zoom-in duration-700 py-6 flex flex-col items-center">
-                <div className="w-12 h-12 rounded-full border border-[#FFF5F5]/30 flex items-center justify-center mb-5">
-                  <span className="text-xl">✓</span>
-                </div>
-                <h3 className="text-2xl lg:text-3xl font-black tracking-tighter mb-3">
-                  ZIŅA SAŅEMTA.
-                </h3>
-                <p className="text-sm lg:text-base font-light opacity-80 mb-6 max-w-sm text-center">
-                  Mēs izpētīsim tavas problēmas automatizācijas iespējas un drīzumā dosim ziņu uz:
-                  <br/><strong className="mt-2 block font-medium text-[#FFF5F5]">{email}</strong>
-                </p>
-                <button
-                  onClick={() => setIsSubmitted(false)}
-                  className="text-[10px] lg:text-xs font-bold tracking-[0.15em] uppercase opacity-60 hover:opacity-100 transition-opacity flex items-center gap-2 border-b border-transparent hover:border-[#FFF5F5] pb-1"
-                >
-                  <span>←</span> Iesniegt citu procesu
+          {/* Divider */}
+          <div className="fu3 w-full mb-8" style={{ height: '1px', background: '#111116' }} />
+
+          {/* Form / Success */}
+          {!isSubmitted ? (
+            <form onSubmit={handleSubmit} className="fu4 w-full flex flex-col gap-7">
+
+              <div className="text-left">
+                <label htmlFor="email" style={{ display: 'block', fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#333330', marginBottom: '0.6rem' }}>
+                  E-pasts
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="input-field"
+                  placeholder="vards@uznemums.lv"
+                />
+              </div>
+
+              <div className="text-left">
+                <label htmlFor="problem" style={{ display: 'block', fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#333330', marginBottom: '0.6rem' }}>
+                  Kas tev besī?
+                </label>
+                <textarea
+                  id="problem"
+                  required
+                  rows={3}
+                  value={problem}
+                  onChange={(e) => setProblem(e.target.value)}
+                  className="input-field"
+                  placeholder="Apraksti savu ikdienas manuālo procesu..."
+                />
+              </div>
+
+              <div className="pt-1">
+                <button type="submit" disabled={isSubmitting} className="submit-btn">
+                  {isSubmitting ? 'Apstrādā...' : (
+                    <><span>Nosūtīt</span><span className="arrow">→</span></>
+                  )}
                 </button>
               </div>
-            )}
-          </div>
-        </div>
+            </form>
+          ) : (
+            <div className="fu1 w-full py-6 flex flex-col items-center">
+              <div style={{ width: '44px', height: '44px', border: '1px solid rgba(201,242,62,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.4rem' }}>
+                <span style={{ color: '#c9f23e', fontSize: '1.1rem', fontWeight: 300 }}>✓</span>
+              </div>
+              <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: '1.6rem', letterSpacing: '-0.03em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+                Saņemts.
+              </h3>
+              <p style={{ fontSize: '0.8rem', fontWeight: 300, color: '#555550', lineHeight: 1.7, maxWidth: '300px', textAlign: 'center', marginBottom: '1.75rem' }}>
+                Izskatīsim pieteikumu un sazināsimies ar{' '}
+                <span style={{ color: '#e6e3dc', fontWeight: 500 }}>{submittedEmail}</span>
+              </p>
+              <button
+                onClick={() => setIsSubmitted(false)}
+                style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#333330', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', transition: 'color 0.2s ease' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#c9f23e'}
+                onMouseLeave={e => e.currentTarget.style.color = '#333330'}
+              >
+                ← Iesniegt vēl
+              </button>
+            </div>
+          )}
 
+          {/* Footer */}
+          <div className="fu5 mt-12" style={{ fontSize: '0.58rem', letterSpacing: '0.18em', color: '#1e1e24', textTransform: 'uppercase' }}>
+            manbesi.lv — mēs parūpēsimies
+          </div>
+
+        </div>
       </div>
     </>
   );
